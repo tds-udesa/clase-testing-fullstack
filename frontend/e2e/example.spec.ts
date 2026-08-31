@@ -1,18 +1,34 @@
 import { test, expect } from '@playwright/test';
 
-test('has title', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+test('get a new random dog and save it', async ({ page }) => {
+  await page.goto('/');
 
-  // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Playwright/);
+  // Wait for the initial random dog to load.
+  await expect(page.getByAltText('Un perro aleatorio')).toBeVisible();
+
+  // Get a new random dog.
+  await page.getByRole('button', { name: 'Otro perro' }).click();
+  await page.waitForTimeout(4000);
+
+  // Save it.
+  await page.getByRole('button', { name: 'Guardar este perro' }).click();
+
+  await expect(
+    page.getByText(/Perro guardado|No se pudo guardar el perro/),
+  ).toBeVisible();
 });
 
-test('get started link', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+test('open the saved dogs list', async ({ page }) => {
+  await page.goto('/');
 
-  // Click the get started link.
-  await page.getByRole('link', { name: 'Get started' }).click();
+  await page.getByRole('link', { name: 'Perros Guardados' }).click();
 
-  // Expects page to have a heading with the name of Installation.
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+  await expect(page).toHaveURL('/saved');
+
+  const emptyMessage = page.getByText(
+    'Todavía no guardaste ningún perro. ¡Guardá uno desde la pestaña Perro Aleatorio!',
+  );
+  const savedDogCard = page.getByRole('img').first();
+
+  await expect(emptyMessage.or(savedDogCard)).toBeVisible();
 });
